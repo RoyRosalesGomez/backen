@@ -30,4 +30,7 @@ export class Propiedad {
   // Relaciones
   @ManyToOne(() => User, user => user.propiedades)
   farmer: User;
+
+  @Column({ type: 'int', nullable: false })
+  farmerId: number; 
 }

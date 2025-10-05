@@ -51,6 +51,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, user => user.propiedades),
     __metadata("design:type", user_entity_1.User)
 ], Propiedad.prototype, "farmer", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: false }),
+    __metadata("design:type", Number)
+], Propiedad.prototype, "farmerId", void 0);
 exports.Propiedad = Propiedad = __decorate([
     (0, typeorm_1.Entity)('propiedades')
 ], Propiedad);

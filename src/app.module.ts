@@ -9,6 +9,7 @@ import { VetShopsModule } from './vet-shops/vet-shops.module';
 import { BitacoraModule } from './bitacora/bitacora.module';
 import { CultivosModule } from './cultivos/cultivos.module';
 import { PropiedadesModule } from './propiedades/propiedades.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { PropiedadesModule } from './propiedades/propiedades.module';
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_DATABASE || 'agroglobal',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Solo para desarrollo
+      synchronize: false, // Solo para desarrollo
       logging: true,
     }),
     AuthModule,
@@ -34,6 +35,8 @@ import { PropiedadesModule } from './propiedades/propiedades.module';
     BitacoraModule,
     CultivosModule,
     PropiedadesModule,
+    
   ],
+  controllers: [AppController], // <-- añade el AppController
 })
 export class AppModule {}

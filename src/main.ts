@@ -1,40 +1,47 @@
-
+// main.ts
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  // CORS: normalmente solo tu frontend (3000). Puedes dejar 3002 si haces pruebas desde ahí.
-  app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3002'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
-
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-
-  const swaggerCfg = new DocumentBuilder()
-    .setTitle('AgroGlobal API')
-    .setDescription('Sistema integral para el sector agrícola')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerCfg);
-  SwaggerModule.setup('api/docs', app, document);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api');
 
-  // ➜ Leer puerto desde .env (o 3002 por defecto)
-  const config = app.get(ConfigService);
-  const port = parseInt(config.get<string>('PORT') ?? '3002', 10);
+  // ⚠️ CORS robusto: permite localhost y 127.0.0.1
+  app.enableCors({
+    origin: (origin, cb) => {
+      const allowlist = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+      ];
+      if (!origin || allowlist.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked: ${origin}`));
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization, Cache-Control',
+    credentials: false, // pon true solo si usas cookies/sesión
+    maxAge: 86400,
+  });
 
-  await app.listen(port, '0.0.0.0');
-  console.log(`🚀 AgroGlobal Backend running on http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  // 🛟 Fallback para preflight antes de guards/filters (por si algo los intercepta)
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:3000');
+      res.header('Vary', 'Origin');
+      res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
+  console.log('🚀 Backend en http://localhost:3002');
 }
-
 bootstrap();

@@ -56,8 +56,4 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateBitacoraDto.prototype, "cantidad", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ example: 1 }),
-    __metadata("design:type", Number)
-], CreateBitacoraDto.prototype, "farmerId", void 0);
 //# sourceMappingURL=create-bitacora.dto.js.map

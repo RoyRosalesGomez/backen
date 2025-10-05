@@ -23,8 +23,9 @@ let BitacoraController = class BitacoraController {
     constructor(bitacoraService) {
         this.bitacoraService = bitacoraService;
     }
-    create(createBitacoraDto) {
-        return this.bitacoraService.create(createBitacoraDto);
+    create(dto, req) {
+        const farmerId = req.user.userId;
+        return this.bitacoraService.create(dto, farmerId);
     }
     findAll(farmerId) {
         return this.bitacoraService.findAll(farmerId);
@@ -32,8 +33,8 @@ let BitacoraController = class BitacoraController {
     findOne(id) {
         return this.bitacoraService.findOne(+id);
     }
-    update(id, updateBitacoraDto) {
-        return this.bitacoraService.update(+id, updateBitacoraDto);
+    update(id, dto) {
+        return this.bitacoraService.update(+id, dto);
     }
     remove(id) {
         return this.bitacoraService.remove(+id);
@@ -44,8 +45,9 @@ __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: 'Crear nueva entrada de bitácora' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_bitacora_dto_1.CreateBitacoraDto]),
+    __metadata("design:paramtypes", [create_bitacora_dto_1.CreateBitacoraDto, Object]),
     __metadata("design:returntype", void 0)
 ], BitacoraController.prototype, "create", null);
 __decorate([

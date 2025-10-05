@@ -1,13 +1,6 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
+  Controller, Get, Post, Body, Patch, Param, Delete, Query,
+  UseGuards, Req
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PropiedadesService } from './propiedades.service';
@@ -24,16 +17,31 @@ export class PropiedadesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear nueva propiedad' })
-  create(@Body() createPropiedadDto: CreatePropiedadDto) {
-    return this.propiedadesService.create(createPropiedadDto);
+  create(@Body() dto: CreatePropiedadDto, @Req() req) {
+    // Si el rol es farmer, ignoramos lo que venga y usamos el id del token
+    const farmerId =
+      req.user?.role === 'farmer' ? Number(req.user.id) : Number(dto.farmerId);
+    return this.propiedadesService.create({ ...dto, farmerId });
   }
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las propiedades' })
-  findAll(
-    @Query('farmerId') farmerId?: number,
-    @Query('active') active?: boolean,
-  ) {
+  findAll(@Query() q: any, @Req() req) {
+    // ⚠️ Los query params llegan como strings
+    let farmerId: number | undefined;
+    let active: boolean | undefined;
+
+    if (req.user?.role === 'farmer') {
+      farmerId = Number(req.user.id);
+    } else if (q.farmerId != null && q.farmerId !== '') {
+      farmerId = Number(q.farmerId);
+    }
+
+    if (q.active !== undefined) {
+      const v = String(q.active).toLowerCase();
+      active = v === 'true' || v === '1';
+    }
+
     return this.propiedadesService.findAll(farmerId, active);
   }
 
@@ -45,8 +53,8 @@ export class PropiedadesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Actualizar propiedad' })
-  update(@Param('id') id: string, @Body() updatePropiedadDto: UpdatePropiedadDto) {
-    return this.propiedadesService.update(+id, updatePropiedadDto);
+  update(@Param('id') id: string, @Body() dto: UpdatePropiedadDto) {
+    return this.propiedadesService.update(+id, dto);
   }
 
   @Patch(':id/toggle-active')

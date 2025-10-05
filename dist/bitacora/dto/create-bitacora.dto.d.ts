@@ -7,5 +7,4 @@ export declare class CreateBitacoraDto {
     lote: string;
     observaciones?: string;
     cantidad: string;
-    farmerId: number;
 }

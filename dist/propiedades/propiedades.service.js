@@ -21,38 +21,49 @@ let PropiedadesService = class PropiedadesService {
     constructor(propiedadesRepository) {
         this.propiedadesRepository = propiedadesRepository;
     }
-    async create(createPropiedadDto) {
+    async create(dto) {
+        if (!dto.farmerId) {
+            throw new common_1.BadRequestException('farmerId requerido');
+        }
         const propiedad = this.propiedadesRepository.create({
-            ...createPropiedadDto,
-            farmer: { id: createPropiedadDto.farmerId },
+            nombre: dto.nombre,
+            localizacion: dto.localizacion,
+            tamano: dto.tamano,
+            comentario: dto.comentario ?? null,
+            active: true,
+            farmerId: dto.farmerId,
+            farmer: { id: dto.farmerId },
         });
-        return this.propiedadesRepository.save(propiedad);
+        const saved = await this.propiedadesRepository.save(propiedad);
+        return this.findOne(saved.id);
     }
     async findAll(farmerId, active) {
-        const query = this.propiedadesRepository.createQueryBuilder('propiedad')
-            .leftJoinAndSelect('propiedad.farmer', 'farmer');
+        const qb = this.propiedadesRepository
+            .createQueryBuilder('propiedad')
+            .leftJoinAndSelect('propiedad.farmer', 'farmer')
+            .orderBy('propiedad.createdAt', 'DESC');
         if (farmerId) {
-            query.andWhere('propiedad.farmerId = :farmerId', { farmerId });
+            qb.andWhere('propiedad.farmerId = :farmerId', { farmerId });
         }
         if (active !== undefined) {
-            query.andWhere('propiedad.active = :active', { active });
+            qb.andWhere('propiedad.active = :active', { active });
         }
-        return query.getMany();
+        return qb.getMany();
     }
     async findOne(id) {
         const propiedad = await this.propiedadesRepository.findOne({
             where: { id },
             relations: ['farmer'],
         });
-        if (!propiedad) {
+        if (!propiedad)
             throw new common_1.NotFoundException('Propiedad no encontrada');
-        }
         return propiedad;
     }
-    async update(id, updatePropiedadDto) {
+    async update(id, dto) {
         const propiedad = await this.findOne(id);
-        Object.assign(propiedad, updatePropiedadDto);
-        return this.propiedadesRepository.save(propiedad);
+        Object.assign(propiedad, dto);
+        await this.propiedadesRepository.save(propiedad);
+        return this.findOne(id);
     }
     async remove(id) {
         const propiedad = await this.findOne(id);
@@ -60,7 +71,9 @@ let PropiedadesService = class PropiedadesService {
     }
     async toggleActive(id) {
         const propiedad = await this.findOne(id);
-        return this.update(id, { active: !propiedad.active });
+        propiedad.active = !propiedad.active;
+        await this.propiedadesRepository.save(propiedad);
+        return this.findOne(id);
     }
 };
 exports.PropiedadesService = PropiedadesService;

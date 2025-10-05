@@ -35,6 +35,6 @@ export class CreateBitacoraDto {
   @IsString()
   cantidad: string;
 
-  @ApiProperty({ example: 1 })
-  farmerId: number;
+  /*@ApiProperty({ example: 1 })
+  farmerId: number;*/
 }

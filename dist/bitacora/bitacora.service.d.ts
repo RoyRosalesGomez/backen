@@ -5,9 +5,9 @@ import { UpdateBitacoraDto } from './dto/update-bitacora.dto';
 export declare class BitacoraService {
     private bitacoraRepository;
     constructor(bitacoraRepository: Repository<BitacoraEntry>);
-    create(createBitacoraDto: CreateBitacoraDto): Promise<BitacoraEntry>;
+    create(dto: CreateBitacoraDto, farmerId: number): Promise<BitacoraEntry>;
     findAll(farmerId?: number): Promise<BitacoraEntry[]>;
     findOne(id: number): Promise<BitacoraEntry>;
-    update(id: number, updateBitacoraDto: UpdateBitacoraDto): Promise<BitacoraEntry>;
+    update(id: number, dto: UpdateBitacoraDto): Promise<BitacoraEntry>;
     remove(id: number): Promise<void>;
 }

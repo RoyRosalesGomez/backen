@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Propiedad } from './entities/propiedad.entity';
@@ -12,28 +12,41 @@ export class PropiedadesService {
     private propiedadesRepository: Repository<Propiedad>,
   ) {}
 
-  async create(createPropiedadDto: CreatePropiedadDto): Promise<Propiedad> {
+  async create(dto: CreatePropiedadDto): Promise<Propiedad> {
+    if (!dto.farmerId) {
+      throw new BadRequestException('farmerId requerido');
+    }
+
     const propiedad = this.propiedadesRepository.create({
-      ...createPropiedadDto,
-      farmer: { id: createPropiedadDto.farmerId } as any,
+      nombre: dto.nombre,
+      localizacion: dto.localizacion,
+      tamano: dto.tamano,
+      comentario: dto.comentario ?? null,
+      active: true,
+      farmerId: dto.farmerId,       // 🔴 graba la FK en la columna
+      farmer: { id: dto.farmerId } as any, // y la relación
     });
 
-    return this.propiedadesRepository.save(propiedad);
+    const saved = await this.propiedadesRepository.save(propiedad);
+    // Devolver con relaciones cargadas
+    return this.findOne(saved.id);
   }
 
   async findAll(farmerId?: number, active?: boolean): Promise<Propiedad[]> {
-    const query = this.propiedadesRepository.createQueryBuilder('propiedad')
-      .leftJoinAndSelect('propiedad.farmer', 'farmer');
+    const qb = this.propiedadesRepository
+      .createQueryBuilder('propiedad')
+      .leftJoinAndSelect('propiedad.farmer', 'farmer')
+      .orderBy('propiedad.createdAt', 'DESC');
 
     if (farmerId) {
-      query.andWhere('propiedad.farmerId = :farmerId', { farmerId });
+      qb.andWhere('propiedad.farmerId = :farmerId', { farmerId });
     }
 
     if (active !== undefined) {
-      query.andWhere('propiedad.active = :active', { active });
+      qb.andWhere('propiedad.active = :active', { active });
     }
 
-    return query.getMany();
+    return qb.getMany();
   }
 
   async findOne(id: number): Promise<Propiedad> {
@@ -41,18 +54,15 @@ export class PropiedadesService {
       where: { id },
       relations: ['farmer'],
     });
-
-    if (!propiedad) {
-      throw new NotFoundException('Propiedad no encontrada');
-    }
-
+    if (!propiedad) throw new NotFoundException('Propiedad no encontrada');
     return propiedad;
   }
 
-  async update(id: number, updatePropiedadDto: UpdatePropiedadDto): Promise<Propiedad> {
+  async update(id: number, dto: UpdatePropiedadDto): Promise<Propiedad> {
     const propiedad = await this.findOne(id);
-    Object.assign(propiedad, updatePropiedadDto);
-    return this.propiedadesRepository.save(propiedad);
+    Object.assign(propiedad, dto);
+    await this.propiedadesRepository.save(propiedad);
+    return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
@@ -62,6 +72,8 @@ export class PropiedadesService {
 
   async toggleActive(id: number): Promise<Propiedad> {
     const propiedad = await this.findOne(id);
-    return this.update(id, { active: !propiedad.active });
+    propiedad.active = !propiedad.active;
+    await this.propiedadesRepository.save(propiedad);
+    return this.findOne(id);
   }
 }

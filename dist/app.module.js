@@ -18,6 +18,7 @@ const vet_shops_module_1 = require("./vet-shops/vet-shops.module");
 const bitacora_module_1 = require("./bitacora/bitacora.module");
 const cultivos_module_1 = require("./cultivos/cultivos.module");
 const propiedades_module_1 = require("./propiedades/propiedades.module");
+const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -35,7 +36,7 @@ exports.AppModule = AppModule = __decorate([
                 password: process.env.DB_PASSWORD || 'root',
                 database: process.env.DB_DATABASE || 'agroglobal',
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: true,
+                synchronize: false,
                 logging: true,
             }),
             auth_module_1.AuthModule,
@@ -47,6 +48,7 @@ exports.AppModule = AppModule = __decorate([
             cultivos_module_1.CultivosModule,
             propiedades_module_1.PropiedadesModule,
         ],
+        controllers: [app_controller_1.AppController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

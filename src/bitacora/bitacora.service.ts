@@ -1,3 +1,4 @@
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,42 +13,37 @@ export class BitacoraService {
     private bitacoraRepository: Repository<BitacoraEntry>,
   ) {}
 
-  async create(createBitacoraDto: CreateBitacoraDto): Promise<BitacoraEntry> {
+  async create(dto: CreateBitacoraDto, farmerId: number): Promise<BitacoraEntry> {
     const entry = this.bitacoraRepository.create({
-      ...createBitacoraDto,
-      farmer: { id: createBitacoraDto.farmerId } as any,
+      ...dto,
+      // Si tu entidad tiene relación ManyToOne, esto funciona:
+      farmer: { id: farmerId } as any,
+      // (TypeORM creará/usa la columna farmerId internamente)
     });
-
     return this.bitacoraRepository.save(entry);
   }
 
   async findAll(farmerId?: number): Promise<BitacoraEntry[]> {
-    const query = this.bitacoraRepository.createQueryBuilder('entry')
+    const qb = this.bitacoraRepository
+      .createQueryBuilder('entry')
       .leftJoinAndSelect('entry.farmer', 'farmer');
 
     if (farmerId) {
-      query.andWhere('entry.farmerId = :farmerId', { farmerId });
+      qb.andWhere('entry.farmerId = :farmerId', { farmerId }); // TypeORM crea farmerId por la relación
     }
 
-    return query.orderBy('entry.fechaInicio', 'DESC').getMany();
+    return qb.orderBy('entry.fechaInicio', 'DESC').getMany();
   }
 
   async findOne(id: number): Promise<BitacoraEntry> {
-    const entry = await this.bitacoraRepository.findOne({
-      where: { id },
-      relations: ['farmer'],
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Entrada de bitácora no encontrada');
-    }
-
+    const entry = await this.bitacoraRepository.findOne({ where: { id }, relations: ['farmer'] });
+    if (!entry) throw new NotFoundException('Entrada de bitácora no encontrada');
     return entry;
   }
 
-  async update(id: number, updateBitacoraDto: UpdateBitacoraDto): Promise<BitacoraEntry> {
+  async update(id: number, dto: UpdateBitacoraDto): Promise<BitacoraEntry> {
     const entry = await this.findOne(id);
-    Object.assign(entry, updateBitacoraDto);
+    Object.assign(entry, dto);
     return this.bitacoraRepository.save(entry);
   }
 

@@ -23,17 +23,30 @@ let PropiedadesController = class PropiedadesController {
     constructor(propiedadesService) {
         this.propiedadesService = propiedadesService;
     }
-    create(createPropiedadDto) {
-        return this.propiedadesService.create(createPropiedadDto);
+    create(dto, req) {
+        const farmerId = req.user?.role === 'farmer' ? Number(req.user.id) : Number(dto.farmerId);
+        return this.propiedadesService.create({ ...dto, farmerId });
     }
-    findAll(farmerId, active) {
+    findAll(q, req) {
+        let farmerId;
+        let active;
+        if (req.user?.role === 'farmer') {
+            farmerId = Number(req.user.id);
+        }
+        else if (q.farmerId != null && q.farmerId !== '') {
+            farmerId = Number(q.farmerId);
+        }
+        if (q.active !== undefined) {
+            const v = String(q.active).toLowerCase();
+            active = v === 'true' || v === '1';
+        }
         return this.propiedadesService.findAll(farmerId, active);
     }
     findOne(id) {
         return this.propiedadesService.findOne(+id);
     }
-    update(id, updatePropiedadDto) {
-        return this.propiedadesService.update(+id, updatePropiedadDto);
+    update(id, dto) {
+        return this.propiedadesService.update(+id, dto);
     }
     toggleActive(id) {
         return this.propiedadesService.toggleActive(+id);
@@ -47,17 +60,18 @@ __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: 'Crear nueva propiedad' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_propiedad_dto_1.CreatePropiedadDto]),
+    __metadata("design:paramtypes", [create_propiedad_dto_1.CreatePropiedadDto, Object]),
     __metadata("design:returntype", void 0)
 ], PropiedadesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: 'Obtener todas las propiedades' }),
-    __param(0, (0, common_1.Query)('farmerId')),
-    __param(1, (0, common_1.Query)('active')),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Boolean]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], PropiedadesController.prototype, "findAll", null);
 __decorate([

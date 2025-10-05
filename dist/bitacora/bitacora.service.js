@@ -21,34 +21,31 @@ let BitacoraService = class BitacoraService {
     constructor(bitacoraRepository) {
         this.bitacoraRepository = bitacoraRepository;
     }
-    async create(createBitacoraDto) {
+    async create(dto, farmerId) {
         const entry = this.bitacoraRepository.create({
-            ...createBitacoraDto,
-            farmer: { id: createBitacoraDto.farmerId },
+            ...dto,
+            farmer: { id: farmerId },
         });
         return this.bitacoraRepository.save(entry);
     }
     async findAll(farmerId) {
-        const query = this.bitacoraRepository.createQueryBuilder('entry')
+        const qb = this.bitacoraRepository
+            .createQueryBuilder('entry')
             .leftJoinAndSelect('entry.farmer', 'farmer');
         if (farmerId) {
-            query.andWhere('entry.farmerId = :farmerId', { farmerId });
+            qb.andWhere('entry.farmerId = :farmerId', { farmerId });
         }
-        return query.orderBy('entry.fechaInicio', 'DESC').getMany();
+        return qb.orderBy('entry.fechaInicio', 'DESC').getMany();
     }
     async findOne(id) {
-        const entry = await this.bitacoraRepository.findOne({
-            where: { id },
-            relations: ['farmer'],
-        });
-        if (!entry) {
+        const entry = await this.bitacoraRepository.findOne({ where: { id }, relations: ['farmer'] });
+        if (!entry)
             throw new common_1.NotFoundException('Entrada de bitácora no encontrada');
-        }
         return entry;
     }
-    async update(id, updateBitacoraDto) {
+    async update(id, dto) {
         const entry = await this.findOne(id);
-        Object.assign(entry, updateBitacoraDto);
+        Object.assign(entry, dto);
         return this.bitacoraRepository.save(entry);
     }
     async remove(id) {

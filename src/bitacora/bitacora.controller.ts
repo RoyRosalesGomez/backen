@@ -1,14 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BitacoraService } from './bitacora.service';
 import { CreateBitacoraDto } from './dto/create-bitacora.dto';
@@ -24,8 +15,9 @@ export class BitacoraController {
 
   @Post()
   @ApiOperation({ summary: 'Crear nueva entrada de bitácora' })
-  create(@Body() createBitacoraDto: CreateBitacoraDto) {
-    return this.bitacoraService.create(createBitacoraDto);
+  create(@Body() dto: CreateBitacoraDto, @Req() req: any) {
+    const farmerId = req.user.userId; // <- viene de JwtStrategy.validate()
+    return this.bitacoraService.create(dto, farmerId);
   }
 
   @Get()
@@ -42,8 +34,8 @@ export class BitacoraController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Actualizar entrada de bitácora' })
-  update(@Param('id') id: string, @Body() updateBitacoraDto: UpdateBitacoraDto) {
-    return this.bitacoraService.update(+id, updateBitacoraDto);
+  update(@Param('id') id: string, @Body() dto: UpdateBitacoraDto) {
+    return this.bitacoraService.update(+id, dto);
   }
 
   @Delete(':id')
