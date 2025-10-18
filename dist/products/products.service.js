@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const product_entity_1 = require("./entities/product.entity");
+const activity_service_1 = require("../activity/activity.service");
 let ProductsService = class ProductsService {
-    constructor(productsRepository) {
+    constructor(productsRepository, activity) {
         this.productsRepository = productsRepository;
+        this.activity = activity;
     }
     async create(createProductDto) {
         const product = this.productsRepository.create({
@@ -27,7 +29,45 @@ let ProductsService = class ProductsService {
             farmer: { id: createProductDto.farmerId },
             status: product_entity_1.ProductStatus.PENDING,
         });
-        return this.productsRepository.save(product);
+        const saved = await this.productsRepository.save(product);
+        await this.activity.log({
+            type: 'PRODUCT_SUBMITTED',
+            title: 'Producto enviado a revisión',
+            description: `${saved.name} fue enviado por el agricultor #${createProductDto.farmerId}`,
+            meta: { productId: saved.id, farmerId: createProductDto.farmerId, status: saved.status },
+        });
+        return saved;
+    }
+    async approve(id) {
+        const updated = await this.update(id, { status: product_entity_1.ProductStatus.APPROVED });
+        await this.activity.log({
+            type: 'PRODUCT_APPROVED',
+            title: 'Producto aprobado',
+            description: `${updated.name} fue aprobado`,
+            meta: { productId: updated.id, status: updated.status },
+        });
+        return updated;
+    }
+    async reject(id) {
+        const updated = await this.update(id, { status: product_entity_1.ProductStatus.REJECTED });
+        await this.activity.log({
+            type: 'PRODUCT_REJECTED',
+            title: 'Producto rechazado',
+            description: `${updated.name} fue rechazado`,
+            meta: { productId: updated.id, status: updated.status },
+        });
+        return updated;
+    }
+    async toggleActive(id) {
+        const product = await this.findOne(id);
+        const updated = await this.update(id, { active: !product.active });
+        await this.activity.log({
+            type: 'PRODUCT_SUBMITTED',
+            title: 'Producto activado/desactivado',
+            description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'}`,
+            meta: { productId: updated.id, active: updated.active },
+        });
+        return updated;
     }
     async findAll(status, category, farmerId, search) {
         const query = this.productsRepository.createQueryBuilder('product')
@@ -68,16 +108,6 @@ let ProductsService = class ProductsService {
         const product = await this.findOne(id);
         await this.productsRepository.remove(product);
     }
-    async approve(id) {
-        return this.update(id, { status: product_entity_1.ProductStatus.APPROVED });
-    }
-    async reject(id) {
-        return this.update(id, { status: product_entity_1.ProductStatus.REJECTED });
-    }
-    async toggleActive(id) {
-        const product = await this.findOne(id);
-        return this.update(id, { active: !product.active });
-    }
     async getStatistics() {
         const total = await this.productsRepository.count();
         const pending = await this.productsRepository.count({ where: { status: product_entity_1.ProductStatus.PENDING } });
@@ -95,6 +125,7 @@ exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        activity_service_1.ActivityService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

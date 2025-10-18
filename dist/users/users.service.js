@@ -18,9 +18,11 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
 const bcrypt = require("bcryptjs");
+const activity_service_1 = require("../activity/activity.service");
 let UsersService = class UsersService {
-    constructor(usersRepository) {
+    constructor(usersRepository, activity) {
         this.usersRepository = usersRepository;
+        this.activity = activity;
     }
     toUserRole(role) {
         if (!role)
@@ -55,7 +57,34 @@ let UsersService = class UsersService {
             password: hashedPassword,
             status: statusOverride ?? user_entity_1.UserStatus.PENDING,
         });
-        return this.usersRepository.save(user);
+        const saved = await this.usersRepository.save(user);
+        await this.activity.log({
+            type: 'USER_CREATED',
+            title: 'Nuevo usuario registrado',
+            description: `${saved.name} ${saved.lastName} se registró como ${saved.role.toLowerCase()}`,
+            meta: { userId: saved.id, role: saved.role },
+        });
+        return saved;
+    }
+    async activateUser(id) {
+        const updated = await this.update(id, { status: user_entity_1.UserStatus.ACTIVE });
+        await this.activity.log({
+            type: 'USER_STATUS_CHANGED',
+            title: 'Usuario activado',
+            description: `${updated.name} ${updated.lastName} fue activado`,
+            meta: { userId: updated.id, newStatus: updated.status },
+        });
+        return updated;
+    }
+    async deactivateUser(id) {
+        const updated = await this.update(id, { status: user_entity_1.UserStatus.INACTIVE });
+        await this.activity.log({
+            type: 'USER_STATUS_CHANGED',
+            title: 'Usuario desactivado',
+            description: `${updated.name} ${updated.lastName} fue desactivado`,
+            meta: { userId: updated.id, newStatus: updated.status },
+        });
+        return updated;
     }
     async findAll(status, search) {
         const query = this.usersRepository.createQueryBuilder('user');
@@ -93,12 +122,6 @@ let UsersService = class UsersService {
         const user = await this.findOne(id);
         await this.usersRepository.remove(user);
     }
-    async activateUser(id) {
-        return this.update(id, { status: user_entity_1.UserStatus.ACTIVE });
-    }
-    async deactivateUser(id) {
-        return this.update(id, { status: user_entity_1.UserStatus.INACTIVE });
-    }
     async changePassword(id, newPassword) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         return this.update(id, { password: hashedPassword });
@@ -115,6 +138,7 @@ exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        activity_service_1.ActivityService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

@@ -2,9 +2,11 @@ import { Repository } from 'typeorm';
 import { VetShop } from './entities/vet-shop.entity';
 import { CreateVetShopDto } from './dto/create-vet-shop.dto';
 import { UpdateVetShopDto } from './dto/update-vet-shop.dto';
+import { ActivityService } from 'src/activity/activity.service';
 export declare class VetShopsService {
     private vetShopsRepository;
-    constructor(vetShopsRepository: Repository<VetShop>);
+    private readonly activity;
+    constructor(vetShopsRepository: Repository<VetShop>, activity: ActivityService);
     create(createVetShopDto: CreateVetShopDto): Promise<VetShop>;
     findAll(active?: boolean): Promise<VetShop[]>;
     findActive(): Promise<VetShop[]>;

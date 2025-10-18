@@ -17,13 +17,22 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const vet_shop_entity_1 = require("./entities/vet-shop.entity");
+const activity_service_1 = require("../activity/activity.service");
 let VetShopsService = class VetShopsService {
-    constructor(vetShopsRepository) {
+    constructor(vetShopsRepository, activity) {
         this.vetShopsRepository = vetShopsRepository;
+        this.activity = activity;
     }
     async create(createVetShopDto) {
         const vetShop = this.vetShopsRepository.create(createVetShopDto);
-        return this.vetShopsRepository.save(vetShop);
+        const saved = await this.vetShopsRepository.save(vetShop);
+        await this.activity.log({
+            type: 'VETSHOP_CREATED',
+            title: 'Agro veterinaria creada',
+            description: `${saved.name} registrada en ${saved.location}`,
+            meta: { vetShopId: saved.id, active: saved.active },
+        });
+        return saved;
     }
     async findAll(active) {
         const query = this.vetShopsRepository.createQueryBuilder('vetShop');
@@ -45,7 +54,14 @@ let VetShopsService = class VetShopsService {
     async update(id, updateVetShopDto) {
         const vetShop = await this.findOne(id);
         Object.assign(vetShop, updateVetShopDto);
-        return this.vetShopsRepository.save(vetShop);
+        const updated = await this.vetShopsRepository.save(vetShop);
+        await this.activity.log({
+            type: 'VETSHOP_TOGGLED',
+            title: 'Agro veterinaria actualizada',
+            description: `${updated.name} fue actualizada`,
+            meta: { vetShopId: updated.id },
+        });
+        return updated;
     }
     async remove(id) {
         const vetShop = await this.findOne(id);
@@ -53,7 +69,15 @@ let VetShopsService = class VetShopsService {
     }
     async toggleActive(id) {
         const vetShop = await this.findOne(id);
-        return this.update(id, { active: !vetShop.active });
+        const current = await this.findOne(id);
+        const updated = await this.update(id, { active: !current.active });
+        await this.activity.log({
+            type: 'VETSHOP_TOGGLED',
+            title: `Agro veterinaria ${updated.active ? 'activada' : 'desactivada'}`,
+            description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'}`,
+            meta: { vetShopId: updated.id, active: updated.active },
+        });
+        return updated;
     }
     async getStatistics() {
         const total = await this.vetShopsRepository.count();
@@ -70,6 +94,7 @@ exports.VetShopsService = VetShopsService;
 exports.VetShopsService = VetShopsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(vet_shop_entity_1.VetShop)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        activity_service_1.ActivityService])
 ], VetShopsService);
 //# sourceMappingURL=vet-shops.service.js.map

@@ -12,12 +12,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const vet_shops_service_1 = require("./vet-shops.service");
 const vet_shops_controller_1 = require("./vet-shops.controller");
 const vet_shop_entity_1 = require("./entities/vet-shop.entity");
+const activity_module_1 = require("../activity/activity.module");
 let VetShopsModule = class VetShopsModule {
 };
 exports.VetShopsModule = VetShopsModule;
 exports.VetShopsModule = VetShopsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([vet_shop_entity_1.VetShop])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([vet_shop_entity_1.VetShop]),
+            activity_module_1.ActivityModule,
+        ],
         controllers: [vet_shops_controller_1.VetShopsController],
         providers: [vet_shops_service_1.VetShopsService],
         exports: [vet_shops_service_1.VetShopsService],

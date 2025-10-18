@@ -7,12 +7,14 @@ import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
+import { ActivityService } from 'src/activity/activity.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private readonly activity: ActivityService,
   ) {}
 
   // 👇 Normaliza string -> enum para evitar "Argument of type '\"admin\"'..."
@@ -57,7 +59,44 @@ export class UsersService {
       status: statusOverride ?? UserStatus.PENDING, // default: PENDING
     });
 
-    return this.usersRepository.save(user);
+    const saved = await this.usersRepository.save(user);
+
+  // 👇 actividad
+  await this.activity.log({
+    type: 'USER_CREATED',
+    title: 'Nuevo usuario registrado',
+    description: `${saved.name} ${saved.lastName} se registró como ${saved.role.toLowerCase()}`,
+    meta: { userId: saved.id, role: saved.role },
+  });
+
+  return saved;
+}
+
+async activateUser(id: number): Promise<User> {
+  const updated = await this.update(id, { status: UserStatus.ACTIVE } as UpdateUserDto);
+
+  await this.activity.log({
+    type: 'USER_STATUS_CHANGED',
+    title: 'Usuario activado',
+    description: `${updated.name} ${updated.lastName} fue activado`,
+    meta: { userId: updated.id, newStatus: updated.status },
+  });
+
+  return updated;
+}
+
+async deactivateUser(id: number): Promise<User> {
+  const updated = await this.update(id, { status: UserStatus.INACTIVE } as UpdateUserDto);
+
+  await this.activity.log({
+    type: 'USER_STATUS_CHANGED',
+    title: 'Usuario desactivado',
+    description: `${updated.name} ${updated.lastName} fue desactivado`,
+    meta: { userId: updated.id, newStatus: updated.status },
+  });
+
+  return updated;
+
   }
 
   async findAll(status?: UserStatus, search?: string): Promise<User[]> {
@@ -109,13 +148,13 @@ export class UsersService {
     await this.usersRepository.remove(user);
   }
 
-  async activateUser(id: number): Promise<User> {
-    return this.update(id, { status: UserStatus.ACTIVE } as UpdateUserDto);
-  }
+  // async activateUser(id: number): Promise<User> {
+  //   return this.update(id, { status: UserStatus.ACTIVE } as UpdateUserDto);
+  // }
 
-  async deactivateUser(id: number): Promise<User> {
-    return this.update(id, { status: UserStatus.INACTIVE } as UpdateUserDto);
-  }
+  // async deactivateUser(id: number): Promise<User> {
+  //   return this.update(id, { status: UserStatus.INACTIVE } as UpdateUserDto);
+  // }
 
   async changePassword(id: number, newPassword: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
