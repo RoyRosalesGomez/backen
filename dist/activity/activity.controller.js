@@ -16,14 +16,13 @@ exports.ActivityController = void 0;
 const common_1 = require("@nestjs/common");
 const activity_service_1 = require("./activity.service");
 let ActivityController = class ActivityController {
-    constructor(activity) {
-        this.activity = activity;
+    constructor(activities) {
+        this.activities = activities;
     }
-    recent(sinceDays, limit) {
-        return this.activity.recent(Number(sinceDays ?? 5), Number(limit ?? 25));
-    }
-    create(body) {
-        return this.activity.log(body);
+    list(sinceDays, limit) {
+        const days = Number(sinceDays ?? 5);
+        const lim = Number(limit ?? 25);
+        return this.activities.getRecentCompacted(days, lim);
     }
 };
 exports.ActivityController = ActivityController;
@@ -34,14 +33,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
-], ActivityController.prototype, "recent", null);
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], ActivityController.prototype, "create", null);
+], ActivityController.prototype, "list", null);
 exports.ActivityController = ActivityController = __decorate([
     (0, common_1.Controller)('activities'),
     __metadata("design:paramtypes", [activity_service_1.ActivityService])

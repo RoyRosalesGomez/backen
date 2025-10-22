@@ -40,6 +40,7 @@ let ProductsService = class ProductsService {
     }
     async approve(id) {
         const updated = await this.update(id, { status: product_entity_1.ProductStatus.APPROVED });
+        await this.activity.deleteProductStatusHistory(updated.id);
         await this.activity.log({
             type: 'PRODUCT_APPROVED',
             title: 'Producto aprobado',
@@ -50,6 +51,7 @@ let ProductsService = class ProductsService {
     }
     async reject(id) {
         const updated = await this.update(id, { status: product_entity_1.ProductStatus.REJECTED });
+        await this.activity.deleteProductStatusHistory(updated.id);
         await this.activity.log({
             type: 'PRODUCT_REJECTED',
             title: 'Producto rechazado',

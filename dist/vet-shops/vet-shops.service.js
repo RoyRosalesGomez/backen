@@ -55,12 +55,6 @@ let VetShopsService = class VetShopsService {
         const vetShop = await this.findOne(id);
         Object.assign(vetShop, updateVetShopDto);
         const updated = await this.vetShopsRepository.save(vetShop);
-        await this.activity.log({
-            type: 'VETSHOP_TOGGLED',
-            title: 'Agro veterinaria actualizada',
-            description: `${updated.name} fue actualizada`,
-            meta: { vetShopId: updated.id },
-        });
         return updated;
     }
     async remove(id) {
@@ -68,9 +62,9 @@ let VetShopsService = class VetShopsService {
         await this.vetShopsRepository.remove(vetShop);
     }
     async toggleActive(id) {
-        const vetShop = await this.findOne(id);
         const current = await this.findOne(id);
         const updated = await this.update(id, { active: !current.active });
+        await this.activity.deleteVetShopToggleHistory(updated.id);
         await this.activity.log({
             type: 'VETSHOP_TOGGLED',
             title: `Agro veterinaria ${updated.active ? 'activada' : 'desactivada'}`,

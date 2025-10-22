@@ -1,29 +1,16 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+
+// src/activity/activity.controller.ts
+import { Controller, Get, Query } from '@nestjs/common';
 import { ActivityService } from './activity.service';
 
 @Controller('activities')
 export class ActivityController {
-  constructor(private readonly activity: ActivityService) {}
+  constructor(private readonly activities: ActivityService) {}
 
   @Get()
-  recent(
-    @Query('sinceDays') sinceDays?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.activity.recent(Number(sinceDays ?? 5), Number(limit ?? 25));
-  }
-
-  // útil si quieres registrar manualmente desde Postman
-  @Post()
-  create(
-    @Body()
-    body: {
-      type: any; // Activity['type']
-      title: string;
-      description: string;
-      meta?: Record<string, any>;
-    },
-  ) {
-    return this.activity.log(body);
+  list(@Query('sinceDays') sinceDays?: string, @Query('limit') limit?: string) {
+    const days = Number(sinceDays ?? 5);
+    const lim  = Number(limit ?? 25);
+    return this.activities.getRecentCompacted(days, lim);
   }
 }

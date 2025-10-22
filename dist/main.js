@@ -17,7 +17,7 @@ async function bootstrap() {
             cb(new Error(`CORS blocked: ${origin}`));
         },
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type, Authorization, Cache-Control',
+        allowedHeaders: 'Content-Type, Authorization, Cache-Control, Pragma',
         credentials: false,
         maxAge: 86400,
     });

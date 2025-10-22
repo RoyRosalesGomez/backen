@@ -18,8 +18,8 @@ const vet_shops_module_1 = require("./vet-shops/vet-shops.module");
 const bitacora_module_1 = require("./bitacora/bitacora.module");
 const cultivos_module_1 = require("./cultivos/cultivos.module");
 const propiedades_module_1 = require("./propiedades/propiedades.module");
-const activity_module_1 = require("./activity/activity.module");
 const app_controller_1 = require("./app.controller");
+const activity_module_1 = require("./activity/activity.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -31,13 +31,13 @@ exports.AppModule = AppModule = __decorate([
             }),
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'mysql',
-                host: process.env.DB_HOST || 'localhost',
-                port: parseInt(process.env.DB_PORT) || 3307,
+                host: process.env.DB_HOST || 'interchange.proxy.rlwy.net',
+                port: parseInt(process.env.DB_PORT) || 31113,
                 username: process.env.DB_USERNAME || 'root',
-                password: process.env.DB_PASSWORD || 'root',
-                database: process.env.DB_DATABASE || 'agroglobal',
+                password: process.env.DB_PASSWORD || 'zQyxNCmCIFAYWyewsWjWACmLMxsNYRXM',
+                database: process.env.DB_DATABASE || 'railway',
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: false,
+                synchronize: true,
                 logging: true,
             }),
             auth_module_1.AuthModule,
@@ -48,7 +48,7 @@ exports.AppModule = AppModule = __decorate([
             bitacora_module_1.BitacoraModule,
             cultivos_module_1.CultivosModule,
             propiedades_module_1.PropiedadesModule,
-            activity_module_1.ActivityModule,
+            activity_module_1.ActivityModule
         ],
         controllers: [app_controller_1.AppController],
     })

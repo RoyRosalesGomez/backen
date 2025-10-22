@@ -37,6 +37,8 @@ export class ProductsService {
 async approve(id: number): Promise<Product> {
   const updated = await this.update(id, { status: ProductStatus.APPROVED });
 
+  await this.activity.deleteProductStatusHistory(updated.id); // 👈 barre previos
+
   await this.activity.log({
     type: 'PRODUCT_APPROVED',
     title: 'Producto aprobado',
@@ -49,6 +51,8 @@ async approve(id: number): Promise<Product> {
 
 async reject(id: number): Promise<Product> {
   const updated = await this.update(id, { status: ProductStatus.REJECTED });
+
+  await this.activity.deleteProductStatusHistory(updated.id); // 👈 barre previos
 
   await this.activity.log({
     type: 'PRODUCT_REJECTED',

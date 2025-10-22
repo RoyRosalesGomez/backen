@@ -60,15 +60,7 @@ export class VetShopsService {
     const vetShop = await this.findOne(id);
     Object.assign(vetShop, updateVetShopDto);
     const updated = await this.vetShopsRepository.save(vetShop); // ✅ ahora sí existe `updated`
-    
-  
 
-   await this.activity.log({
-      type: 'VETSHOP_TOGGLED', // o crea un nuevo tipo 'VETSHOP_UPDATED'
-      title: 'Agro veterinaria actualizada',
-      description: `${updated.name} fue actualizada`,
-      meta: { vetShopId: updated.id },
-    });
     return updated;
   }
 
@@ -78,21 +70,21 @@ export class VetShopsService {
   }
 
   async toggleActive(id: number): Promise<VetShop> {
-    const vetShop = await this.findOne(id);
-    const current = await this.findOne(id);
-     const updated = await this.update(id, { active: !current.active }); // ✅ `updated` definido
-   
+  const current = await this.findOne(id);
+  const updated = await this.update(id, { active: !current.active });
 
-    // ✅ Actividad: activada/desactivada
-    await this.activity.log({
-      type: 'VETSHOP_TOGGLED',
-      title: `Agro veterinaria ${updated.active ? 'activada' : 'desactivada'}`,
-      description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'}`,
-      meta: { vetShopId: updated.id, active: updated.active },
-    });
+  await this.activity.deleteVetShopToggleHistory(updated.id); // 👈 barre previos
 
-    return updated;
-  }
+  await this.activity.log({
+    type: 'VETSHOP_TOGGLED',
+    title: `Agro veterinaria ${updated.active ? 'activada' : 'desactivada'}`,
+    description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'}`,
+    meta: { vetShopId: updated.id, active: updated.active },
+  });
+
+  return updated;
+}
+
 
   async getStatistics() {
     const total = await this.vetShopsRepository.count();

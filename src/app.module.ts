@@ -10,6 +10,7 @@ import { BitacoraModule } from './bitacora/bitacora.module';
 import { CultivosModule } from './cultivos/cultivos.module';
 import { PropiedadesModule } from './propiedades/propiedades.module';
 import { AppController } from './app.controller';
+import { ActivityModule } from './activity/activity.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AppController } from './app.controller';
     BitacoraModule,
     CultivosModule,
     PropiedadesModule,
+    ActivityModule
     
   ],
   controllers: [AppController], // <-- añade el AppController
