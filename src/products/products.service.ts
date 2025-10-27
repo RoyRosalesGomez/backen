@@ -15,15 +15,15 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productsRepository.create({
-      ...createProductDto,
-      farmer: { id: createProductDto.farmerId } as any,
-      status: ProductStatus.PENDING,
-    });
+  const product = this.productsRepository.create({
+    ...createProductDto,
+    farmer: { id: createProductDto.farmerId } as any,
+    status: ProductStatus.PENDING,
+    active: false, // 👈 cuando se crea, arranca inactivo
+  });
 
-    const saved = await this.productsRepository.save(product);
+  const saved = await this.productsRepository.save(product);
 
-  // 👇 actividad
   await this.activity.log({
     type: 'PRODUCT_SUBMITTED',
     title: 'Producto enviado a revisión',
@@ -35,33 +35,37 @@ export class ProductsService {
 }
 
 async approve(id: number): Promise<Product> {
-  const updated = await this.update(id, { status: ProductStatus.APPROVED });
+  const product = await this.findOne(id);
+  product.status = ProductStatus.APPROVED;
+  product.active = true; // 👈 se activa al aprobar
+  await this.productsRepository.save(product);
 
-  await this.activity.deleteProductStatusHistory(updated.id); // 👈 barre previos
-
+  await this.activity.deleteProductStatusHistory(product.id);
   await this.activity.log({
     type: 'PRODUCT_APPROVED',
     title: 'Producto aprobado',
-    description: `${updated.name} fue aprobado`,
-    meta: { productId: updated.id, status: updated.status },
+    description: `${product.name} fue aprobado`,
+    meta: { productId: product.id, status: product.status, active: product.active },
   });
 
-  return updated;
+  return product;
 }
 
 async reject(id: number): Promise<Product> {
-  const updated = await this.update(id, { status: ProductStatus.REJECTED });
+  const product = await this.findOne(id);
+  product.status = ProductStatus.REJECTED;
+  product.active = false; // 👈 se desactiva al rechazar
+  await this.productsRepository.save(product);
 
-  await this.activity.deleteProductStatusHistory(updated.id); // 👈 barre previos
-
+  await this.activity.deleteProductStatusHistory(product.id);
   await this.activity.log({
     type: 'PRODUCT_REJECTED',
     title: 'Producto rechazado',
-    description: `${updated.name} fue rechazado`,
-    meta: { productId: updated.id, status: updated.status },
+    description: `${product.name} fue rechazado`,
+    meta: { productId: product.id, status: product.status, active: product.active },
   });
 
-  return updated;
+  return product;
 }
 
 async toggleActive(id: number): Promise<Product> {

@@ -28,6 +28,7 @@ let ProductsService = class ProductsService {
             ...createProductDto,
             farmer: { id: createProductDto.farmerId },
             status: product_entity_1.ProductStatus.PENDING,
+            active: false,
         });
         const saved = await this.productsRepository.save(product);
         await this.activity.log({
@@ -39,26 +40,32 @@ let ProductsService = class ProductsService {
         return saved;
     }
     async approve(id) {
-        const updated = await this.update(id, { status: product_entity_1.ProductStatus.APPROVED });
-        await this.activity.deleteProductStatusHistory(updated.id);
+        const product = await this.findOne(id);
+        product.status = product_entity_1.ProductStatus.APPROVED;
+        product.active = true;
+        await this.productsRepository.save(product);
+        await this.activity.deleteProductStatusHistory(product.id);
         await this.activity.log({
             type: 'PRODUCT_APPROVED',
             title: 'Producto aprobado',
-            description: `${updated.name} fue aprobado`,
-            meta: { productId: updated.id, status: updated.status },
+            description: `${product.name} fue aprobado`,
+            meta: { productId: product.id, status: product.status, active: product.active },
         });
-        return updated;
+        return product;
     }
     async reject(id) {
-        const updated = await this.update(id, { status: product_entity_1.ProductStatus.REJECTED });
-        await this.activity.deleteProductStatusHistory(updated.id);
+        const product = await this.findOne(id);
+        product.status = product_entity_1.ProductStatus.REJECTED;
+        product.active = false;
+        await this.productsRepository.save(product);
+        await this.activity.deleteProductStatusHistory(product.id);
         await this.activity.log({
             type: 'PRODUCT_REJECTED',
             title: 'Producto rechazado',
-            description: `${updated.name} fue rechazado`,
-            meta: { productId: updated.id, status: updated.status },
+            description: `${product.name} fue rechazado`,
+            meta: { productId: product.id, status: product.status, active: product.active },
         });
-        return updated;
+        return product;
     }
     async toggleActive(id) {
         const product = await this.findOne(id);
