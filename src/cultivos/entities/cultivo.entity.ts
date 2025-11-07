@@ -15,7 +15,7 @@ export class Cultivo {
   @Column('text', { nullable: true })
   comentario: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   image: string;
 
   @Column({ default: true })

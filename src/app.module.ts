@@ -25,7 +25,7 @@ import { ActivityModule } from './activity/activity.module';
       password: process.env.DB_PASSWORD || 'zQyxNCmCIFAYWyewsWjWACmLMxsNYRXM',
       database: process.env.DB_DATABASE || 'railway',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false, // Solo para desarrollo
+      synchronize: true, // Solo para desarrollo
       logging: true,
     }),
     AuthModule,
