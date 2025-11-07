@@ -75,10 +75,16 @@ let AuthService = class AuthService {
         }
         const user = await this.usersService.create({ ...createUserDto, role: normalizedRole }, statusOverride);
         const { password, ...result } = user;
-        const message = result.role === user_entity_1.UserRole.ADMIN && result.status === user_entity_1.UserStatus.ACTIVE
+        const isFirstAdminActive = result.role === user_entity_1.UserRole.ADMIN && result.status === user_entity_1.UserStatus.ACTIVE;
+        const payload = { email: result.email, sub: result.id, role: result.role, status: result.status };
+        const access_token = isFirstAdminActive ? this.jwtService.sign(payload) : undefined;
+        const message = isFirstAdminActive
             ? 'Administrador creado y activado (primer admin).'
-            : 'Usuario registrado exitosamente. Su cuenta está pendiente de activación.';
-        return { message, user: result };
+            : 'Usuario registrado. Su cuenta está pendiente de activación.';
+        return { message, user: result, access_token };
+    }
+    async countAllUsers() {
+        return this.usersService.countAll();
     }
 };
 exports.AuthService = AuthService;

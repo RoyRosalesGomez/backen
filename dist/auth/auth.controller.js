@@ -18,15 +18,22 @@ const swagger_1 = require("@nestjs/swagger");
 const auth_service_1 = require("./auth.service");
 const local_auth_guard_1 = require("./guards/local-auth.guard");
 const create_user_dto_1 = require("../users/dto/create-user.dto");
+const user_entity_1 = require("../users/entities/user.entity");
+const users_service_1 = require("../users/users.service");
 let AuthController = class AuthController {
-    constructor(authService) {
+    constructor(authService, users) {
         this.authService = authService;
+        this.users = users;
     }
     async login(req) {
         return this.authService.login(req.user);
     }
     async register(createUserDto) {
         return this.authService.register(createUserDto);
+    }
+    async adminExists() {
+        const count = await this.users.countByRole(user_entity_1.UserRole.ADMIN);
+        return { exists: count > 0 };
     }
 };
 exports.AuthController = AuthController;
@@ -49,9 +56,15 @@ __decorate([
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
+__decorate([
+    (0, common_1.Get)('admin-exists'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "adminExists", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)('auth'),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService, users_service_1.UsersService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

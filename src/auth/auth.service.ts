@@ -76,18 +76,29 @@ export class AuthService {
       statusOverride = adminCount === 0 ? UserStatus.ACTIVE : UserStatus.PENDING;
     }
 
-    const user = await this.usersService.create(
-      { ...createUserDto, role: normalizedRole },
-      statusOverride,
-    );
+     const user = await this.usersService.create(
+    { ...createUserDto, role: normalizedRole },
+    statusOverride,
+  );
 
     const { password, ...result } = user;
 
-    const message =
-      result.role === UserRole.ADMIN && result.status === UserStatus.ACTIVE
-        ? 'Administrador creado y activado (primer admin).'
-        : 'Usuario registrado exitosamente. Su cuenta está pendiente de activación.';
+    const isFirstAdminActive =
+    result.role === UserRole.ADMIN && result.status === UserStatus.ACTIVE;
 
-    return { message, user: result };
+  
+    const payload = { email: result.email, sub: result.id, role: result.role, status: result.status };
+    const access_token = isFirstAdminActive ? this.jwtService.sign(payload) : undefined;
+    
+    const message = isFirstAdminActive
+    ? 'Administrador creado y activado (primer admin).'
+    : 'Usuario registrado. Su cuenta está pendiente de activación.';
+
+    return { message, user: result, access_token };
   }
+
+  async countAllUsers() {
+  return this.usersService.countAll();
+}
+
 }

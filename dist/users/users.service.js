@@ -39,6 +39,9 @@ let UsersService = class UsersService {
                 return user_entity_1.UserRole.CLIENT;
         }
     }
+    async countAll() {
+        return this.usersRepository.count();
+    }
     async countByRole(role) {
         return this.usersRepository.count({ where: { role } });
     }

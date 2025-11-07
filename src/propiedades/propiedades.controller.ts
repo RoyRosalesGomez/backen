@@ -1,6 +1,8 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete, Query,
-  UseGuards, Req
+  UseGuards, Req,
+  BadRequestException,
+  ForbiddenException
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PropiedadesService } from './propiedades.service';
@@ -14,15 +16,26 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiBearerAuth()
 export class PropiedadesController {
   constructor(private readonly propiedadesService: PropiedadesService) {}
+@Post()
+async create(@Body() dto: CreatePropiedadDto, @Req() req: any) {
+  const u = req.user ?? {};
+  // Intenta body primero, si no, toma del token (sub/id)
+  const farmerId =
+    Number.isFinite(Number(dto.farmerId)) ? Number(dto.farmerId)
+    : Number(u.sub ?? u.id ?? u.userId);
 
-  @Post()
-  @ApiOperation({ summary: 'Crear nueva propiedad' })
-  create(@Body() dto: CreatePropiedadDto, @Req() req) {
-    // Si el rol es farmer, ignoramos lo que venga y usamos el id del token
-    const farmerId =
-      req.user?.role === 'farmer' ? Number(req.user.id) : Number(dto.farmerId);
-    return this.propiedadesService.create({ ...dto, farmerId });
+  // (Opcional) valida rol
+  // if (u.role && u.role !== 'farmer') throw new ForbiddenException('Solo agricultores pueden crear propiedades');
+
+  if (!Number.isFinite(farmerId)) {
+    // DEBUG opcional
+    // console.log('[PROP CONTROLLER] req.user =', u, 'body=', dto);
+    throw new BadRequestException('farmerId requerido');
   }
+
+  dto.farmerId = farmerId;
+  return this.propiedadesService.create(dto);
+}
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las propiedades' })

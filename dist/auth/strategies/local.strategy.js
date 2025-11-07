@@ -16,7 +16,7 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("../auth.service");
 let LocalStrategy = class LocalStrategy extends (0, passport_1.PassportStrategy)(passport_local_1.Strategy) {
     constructor(authService) {
-        super({ usernameField: 'email' });
+        super({ usernameField: 'email', passwordField: 'password' });
         this.authService = authService;
     }
     async validate(email, password) {

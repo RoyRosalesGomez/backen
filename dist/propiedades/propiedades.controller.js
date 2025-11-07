@@ -23,9 +23,15 @@ let PropiedadesController = class PropiedadesController {
     constructor(propiedadesService) {
         this.propiedadesService = propiedadesService;
     }
-    create(dto, req) {
-        const farmerId = req.user?.role === 'farmer' ? Number(req.user.id) : Number(dto.farmerId);
-        return this.propiedadesService.create({ ...dto, farmerId });
+    async create(dto, req) {
+        const u = req.user ?? {};
+        const farmerId = Number.isFinite(Number(dto.farmerId)) ? Number(dto.farmerId)
+            : Number(u.sub ?? u.id ?? u.userId);
+        if (!Number.isFinite(farmerId)) {
+            throw new common_1.BadRequestException('farmerId requerido');
+        }
+        dto.farmerId = farmerId;
+        return this.propiedadesService.create(dto);
     }
     findAll(q, req) {
         let farmerId;
@@ -58,12 +64,11 @@ let PropiedadesController = class PropiedadesController {
 exports.PropiedadesController = PropiedadesController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Crear nueva propiedad' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_propiedad_dto_1.CreatePropiedadDto, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], PropiedadesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),

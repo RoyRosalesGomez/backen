@@ -13,24 +13,24 @@ export class PropiedadesService {
   ) {}
 
   async create(dto: CreatePropiedadDto): Promise<Propiedad> {
-    if (!dto.farmerId) {
-      throw new BadRequestException('farmerId requerido');
-    }
-
-    const propiedad = this.propiedadesRepository.create({
-      nombre: dto.nombre,
-      localizacion: dto.localizacion,
-      tamano: dto.tamano,
-      comentario: dto.comentario ?? null,
-      active: true,
-      farmerId: dto.farmerId,       // 🔴 graba la FK en la columna
-      farmer: { id: dto.farmerId } as any, // y la relación
-    });
-
-    const saved = await this.propiedadesRepository.save(propiedad);
-    // Devolver con relaciones cargadas
-    return this.findOne(saved.id);
+  if (!dto.farmerId) {
+    // Con el controller corregido, esto ya no debería ocurrir.
+    throw new BadRequestException('farmerId requerido');
   }
+
+  const propiedad = this.propiedadesRepository.create({
+    nombre: dto.nombre,
+    localizacion: dto.localizacion,
+    tamano: dto.tamano,
+    comentario: dto.comentario ?? null,
+    active: true,
+    farmerId: dto.farmerId,
+    farmer: { id: dto.farmerId } as any,
+  });
+
+  const saved = await this.propiedadesRepository.save(propiedad);
+  return this.findOne(saved.id);
+}
 
   async findAll(farmerId?: number, active?: boolean): Promise<Propiedad[]> {
     const qb = this.propiedadesRepository

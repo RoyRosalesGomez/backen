@@ -1,24 +1,22 @@
-import { IsString, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+// dto/create-propiedad.dto.ts
+import { IsString, IsOptional, IsNotEmpty, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePropiedadDto {
-  @ApiProperty({ example: 'Finca El Progreso' })
-  @IsString()
+  @IsString() @IsNotEmpty()
   nombre: string;
 
-  @ApiProperty({ example: 'Cartago, Paraíso' })
-  @IsString()
+  @IsString() @IsNotEmpty()
   localizacion: string;
 
-  @ApiProperty({ example: '5 hectáreas' })
-  @IsString()
+  @IsString() @IsNotEmpty()
   tamano: string;
 
-  @ApiProperty({ example: 'Finca principal con cultivos diversos', required: false })
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString()
   comentario?: string;
 
-  @ApiProperty({ example: 1 })
-  farmerId: number;
+  @IsOptional()              // ⬅️ opcional aquí
+  @Type(() => Number)
+  @IsNumber()
+  farmerId?: number;         // ⬅️ opcional aquí
 }

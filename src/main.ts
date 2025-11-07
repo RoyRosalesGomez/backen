@@ -39,8 +39,9 @@ async function bootstrap() {
     next();
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, transformOptions: { enableImplicitConversion: true }, }));
 
+  
   await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
   console.log('🚀 Backend en http://localhost:3002');
 }

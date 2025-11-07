@@ -1,13 +1,15 @@
-import { Controller, Request, Post, UseGuards, Body } from '@nestjs/common';
+import { Controller, Request, Post, UseGuards, Body, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UserRole } from 'src/users/entities/user.entity';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private users: UsersService) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -22,5 +24,11 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente' })
   async register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
+  }
+
+   @Get('admin-exists')
+  async adminExists() {
+    const count = await this.users.countByRole(UserRole.ADMIN);
+    return { exists: count > 0 };
   }
 }

@@ -3,5 +3,5 @@ export declare class CreatePropiedadDto {
     localizacion: string;
     tamano: string;
     comentario?: string;
-    farmerId: number;
+    farmerId?: number;
 }

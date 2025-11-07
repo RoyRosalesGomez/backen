@@ -32,6 +32,10 @@ export class UsersService {
     }
   }
 
+  async countAll(): Promise<number> {
+  return this.usersRepository.count();
+}
+
   // Cuenta por rol (usa el enum, no string literal)
   async countByRole(role: UserRole): Promise<number> {
     return this.usersRepository.count({ where: { role } });

@@ -8,6 +8,7 @@ export declare class UsersService {
     private readonly activity;
     constructor(usersRepository: Repository<User>, activity: ActivityService);
     private toUserRole;
+    countAll(): Promise<number>;
     countByRole(role: UserRole): Promise<number>;
     create(createUserDto: CreateUserDto, statusOverride?: UserStatus): Promise<User>;
     activateUser(id: number): Promise<User>;

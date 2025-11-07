@@ -1,8 +1,11 @@
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UserRole } from 'src/users/entities/user.entity';
+import { UsersService } from '../users/users.service';
 export declare class AuthController {
     private authService;
-    constructor(authService: AuthService);
+    private users;
+    constructor(authService: AuthService, users: UsersService);
     login(req: any): Promise<{
         access_token: string;
         user: {
@@ -24,8 +27,8 @@ export declare class AuthController {
             phone: string;
             location: string;
             residence: string;
-            role: import("../users/entities/user.entity").UserRole;
-            status: import("../users/entities/user.entity").UserStatus;
+            role: UserRole;
+            status: import("src/users/entities/user.entity").UserStatus;
             canView: boolean;
             canEdit: boolean;
             isAdmin: boolean;
@@ -37,5 +40,9 @@ export declare class AuthController {
             cultivos: import("../cultivos/entities/cultivo.entity").Cultivo[];
             propiedades: import("../propiedades/entities/propiedad.entity").Propiedad[];
         };
+        access_token: string;
+    }>;
+    adminExists(): Promise<{
+        exists: boolean;
     }>;
 }

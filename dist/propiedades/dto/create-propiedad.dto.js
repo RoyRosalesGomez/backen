@@ -11,33 +11,34 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePropiedadDto = void 0;
 const class_validator_1 = require("class-validator");
-const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
 class CreatePropiedadDto {
 }
 exports.CreatePropiedadDto = CreatePropiedadDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Finca El Progreso' }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreatePropiedadDto.prototype, "nombre", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Cartago, Paraíso' }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreatePropiedadDto.prototype, "localizacion", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '5 hectáreas' }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreatePropiedadDto.prototype, "tamano", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Finca principal con cultivos diversos', required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreatePropiedadDto.prototype, "comentario", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 1 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreatePropiedadDto.prototype, "farmerId", void 0);
 //# sourceMappingURL=create-propiedad.dto.js.map

@@ -31,6 +31,6 @@ export class Propiedad {
   @ManyToOne(() => User, user => user.propiedades)
   farmer: User;
 
-  @Column({ type: 'int', nullable: false })
-  farmerId: number; 
+  @Column({ type: 'int', nullable: true })   // <- antes estaba sin nullable
+farmerId: number | null;
 }

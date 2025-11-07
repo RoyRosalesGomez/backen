@@ -9,5 +9,5 @@ export declare class Propiedad {
     createdAt: Date;
     updatedAt: Date;
     farmer: User;
-    farmerId: number;
+    farmerId: number | null;
 }

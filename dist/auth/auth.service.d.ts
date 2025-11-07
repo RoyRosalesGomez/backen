@@ -61,5 +61,7 @@ export declare class AuthService {
             cultivos: import("../cultivos/entities/cultivo.entity").Cultivo[];
             propiedades: import("../propiedades/entities/propiedad.entity").Propiedad[];
         };
+        access_token: string;
     }>;
+    countAllUsers(): Promise<number>;
 }

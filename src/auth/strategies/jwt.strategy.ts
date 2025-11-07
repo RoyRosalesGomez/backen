@@ -33,6 +33,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+// auth/strategies/jwt.strategy.ts
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(cfg: ConfigService) {
@@ -44,11 +45,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // ⬇️ Normalizamos: expone sub e id con el mismo valor
     return {
-      userId: payload.sub,
+      sub: payload.sub,
+      id:  payload.sub,
       email: payload.email,
       role: payload.role,
       status: payload.status,
     };
   }
 }
+
+
