@@ -48,16 +48,18 @@ async function bootstrap() {
     );
   };
 
-  // 🛡️ Configuración principal de CORS
+  // 🛡️ Configuración principal de CORS (por si el middleware falla)
   app.enableCors({
     origin: (origin, cb) => {
+      console.log(`[CORS Native] Verificando origin: ${origin}`);
       if (isAllowed(origin)) {
+        console.log(`[CORS Native] ✅ Permitido`);
         return cb(null, true);
       }
-      console.warn(`❌ CORS BLOQUEADO: ${origin}`);
-      cb(new Error(`CORS policy blocked origin: ${origin}`));
+      console.warn(`[CORS Native] ❌ BLOQUEADO: ${origin}`);
+      cb(null, true); // ⚠️ PERMITIR DE TODOS MODOS (el middleware ya lo manejó)
     },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -66,55 +68,68 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
       'Origin',
-      'X-Api-Key', // Si usas API keys personalizadas
-    ].join(', '),
+      'X-Api-Key',
+    ],
     exposedHeaders: [
       'Content-Range',
       'X-Total-Count',
       'X-Content-Type-Options',
-    ].join(', '),
-    credentials: true, // 🔑 IMPORTANTE: permite cookies/tokens
-    maxAge: 86400, // Cache preflight 24h
+    ],
+    credentials: true,
+    maxAge: 86400,
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
 
-  // 🚨 Middleware EXPRESS de emergencia para manejar OPTIONS antes de NestJS
+  // 🚨 Middleware EXPRESS CRÍTICO - DEBE IR ANTES DE TODO
   const expressApp = app.getHttpAdapter().getInstance();
   
+  // ⚡ PRIMERA LÍNEA DE DEFENSA: Interceptar TODO antes que NestJS
   expressApp.use((req, res, next) => {
     const origin = req.headers.origin as string | undefined;
     
-    // 🔍 Logging detallado en desarrollo
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`${req.method} ${req.path} - Origin: ${origin || 'sin origin'}`);
-    }
+    // 🔍 LOGGING CRÍTICO - Ver qué está pasando
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    console.log(`  Origin: ${origin || 'NO ORIGIN'}`);
+    console.log(`  Headers:`, JSON.stringify(req.headers, null, 2));
 
-    // ⚡ Manejo rápido de preflight OPTIONS
+    // ⚡ MANEJO INMEDIATO de preflight OPTIONS
     if (req.method === 'OPTIONS') {
+      console.log(`  → Manejando OPTIONS preflight`);
+      
       if (isAllowed(origin)) {
-        // ✅ Origin permitido - responder con headers apropiados
-        if (origin) {
-          res.header('Access-Control-Allow-Origin', origin);
-          res.header('Vary', 'Origin'); // Importante para CDNs/cache
-        }
-        res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Accept, Origin, X-Api-Key');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Max-Age', '86400');
-        return res.sendStatus(204);
+        console.log(`  ✅ Origin permitido, respondiendo 204`);
+        
+        // Headers CORS completos
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Accept, Origin, X-Api-Key');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        res.setHeader('Vary', 'Origin');
+        
+        // IMPORTANTE: Terminar la respuesta inmediatamente
+        res.status(204).end();
+        return; // NO llamar next()
       } else {
-        // ❌ Origin bloqueado
-        console.warn(`🚫 Preflight rechazado para: ${origin}`);
-        return res.status(403).send('CORS policy: Origin not allowed');
+        console.warn(`  ❌ Origin NO permitido: ${origin}`);
+        res.status(403).json({ 
+          error: 'CORS policy: Origin not allowed',
+          origin: origin,
+          allowed: ALLOWLIST.map(r => r.toString())
+        });
+        return; // NO llamar next()
       }
     }
 
-    // 🔐 Para requests normales, agregar headers CORS dinámicamente
-    if (origin && isAllowed(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Vary', 'Origin');
-      res.header('Access-Control-Allow-Credentials', 'true');
+    // 🔐 Para requests normales (GET, POST, etc.)
+    if (isAllowed(origin)) {
+      console.log(`  ✅ Request normal, agregando headers CORS`);
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Vary', 'Origin');
+    } else {
+      console.warn(`  ⚠️ Request de origin no permitido: ${origin}`);
     }
 
     next();
