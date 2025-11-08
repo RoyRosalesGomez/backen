@@ -1,6 +1,6 @@
 
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UserRole, UserStatus } from '../users/entities/user.entity';
@@ -100,5 +100,43 @@ export class AuthService {
   async countAllUsers() {
   return this.usersService.countAll();
 }
+
+  // 🔐 Verificar que el correo existe en la base de datos
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('No existe una cuenta con este correo electrónico');
+    }
+
+    // Retornar mensaje de éxito (el correo existe)
+    return {
+      message: 'Correo verificado correctamente. Puede proceder a restablecer su contraseña.',
+      email: user.email
+    };
+  }
+
+  // 🔐 Resetear contraseña verificando que coincidan
+  async resetPassword(email: string, newPassword: string, confirmPassword: string) {
+    // Verificar que las contraseñas coincidan
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
+
+    // Buscar el usuario por email
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('No existe una cuenta con este correo electrónico');
+    }
+
+    // Cambiar la contraseña usando el método del servicio de usuarios
+    // Este método ya se encarga de hashear la contraseña automáticamente
+    await this.usersService.changePassword(user.id, newPassword);
+
+    return {
+      message: 'Contraseña actualizada exitosamente. Ya puede iniciar sesión con su nueva contraseña.'
+    };
+  }
 
 }
