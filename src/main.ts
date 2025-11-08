@@ -6,20 +6,16 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
   app.setGlobalPrefix('api');
 
-  // ✅ Allowlist: localhost y dominios Vercel de tu proyecto (prod + previews)
-  // - Prod: ajusta el dominio exacto si cambias
-  // - Previews: coinciden con "front-<cualquier-cosa>.vercel.app"
   const ALLOWLIST: (string | RegExp)[] = [
     /^https?:\/\/(localhost|127\.0\.0\.1):3000$/,
     'https://front-topaz-two.vercel.app',
-    /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/, // previews de Vercel
+    /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/,
   ];
 
-  const isAllowed = (origin?: string | null) => {
-    if (!origin) return true; // curl/health checks
+  const isAllowed = (origin?: string | null): boolean => {
+    if (!origin) return true;
     return ALLOWLIST.some((rule) =>
       typeof rule === 'string' ? rule === origin : rule.test(origin),
     );
@@ -28,17 +24,16 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, cb) => {
       if (isAllowed(origin)) return cb(null, true);
-      cb(new Error(`CORS blocked: ${origin}`));
+      cb(new Error('CORS blocked: ' + origin));
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders:
       'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With',
     exposedHeaders: 'Content-Range, X-Total-Count',
-    credentials: false, // true solo si usas cookies
+    credentials: true,
     maxAge: 86400,
   });
 
-  // 🔁 Fallback preflight explícito (por si algún guard/middleware intercepta)
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
@@ -54,7 +49,7 @@ async function bootstrap() {
           'Access-Control-Allow-Headers',
           'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With',
         );
-        // res.header('Access-Control-Allow-Credentials', 'true'); // si credentials=true
+        res.header('Access-Control-Allow-Credentials', 'true');
         return res.sendStatus(204);
       }
       return res.sendStatus(403);
@@ -71,6 +66,6 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
-  console.log('🚀 Backend listo');
+  console.log('Backend listo en puerto', process.env.PORT ?? 3002);
 }
 bootstrap();

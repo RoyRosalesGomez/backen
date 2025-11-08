@@ -6,20 +6,44 @@ const common_1 = require("@nestjs/common");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api');
+    const ALLOWLIST = [
+        /^https?:\/\/(localhost|127\.0\.0\.1):3000$/,
+        'https://front-topaz-two.vercel.app',
+        /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/,
+    ];
+    const isAllowed = (origin) => {
+        if (!origin)
+            return true;
+        return ALLOWLIST.some((rule) => typeof rule === 'string' ? rule === origin : rule.test(origin));
+    };
     app.enableCors({
-        origin: [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://localhost:5173',
-            'https://front-topaz-two.vercel.app',
-            /\.vercel\.app$/,
-        ],
+        origin: (origin, cb) => {
+            if (isAllowed(origin))
+                return cb(null, true);
+            cb(new Error('CORS blocked: ' + origin));
+        },
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'X-Requested-With'],
-        exposedHeaders: ['Content-Range', 'X-Total-Count'],
-        credentials: false,
-        optionsSuccessStatus: 204,
+        allowedHeaders: 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With',
+        exposedHeaders: 'Content-Range, X-Total-Count',
+        credentials: true,
         maxAge: 86400,
+    });
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use((req, res, next) => {
+        if (req.method === 'OPTIONS') {
+            const origin = req.headers.origin;
+            if (isAllowed(origin)) {
+                if (origin)
+                    res.header('Access-Control-Allow-Origin', origin);
+                res.header('Vary', 'Origin');
+                res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With');
+                res.header('Access-Control-Allow-Credentials', 'true');
+                return res.sendStatus(204);
+            }
+            return res.sendStatus(403);
+        }
+        next();
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
@@ -27,7 +51,7 @@ async function bootstrap() {
         transformOptions: { enableImplicitConversion: true },
     }));
     await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
-    console.log('🚀 Backend listo');
+    console.log('Backend listo en puerto', process.env.PORT ?? 3002);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
