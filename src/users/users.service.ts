@@ -161,8 +161,10 @@ async deactivateUser(id: number): Promise<User> {
   // }
 
   async changePassword(id: number, newPassword: string): Promise<User> {
+    const user = await this.findOne(id);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    return this.update(id, { password: hashedPassword } as UpdateUserDto);
+    user.password = hashedPassword;
+    return this.usersRepository.save(user);
   }
 
   async getStatistics() {
