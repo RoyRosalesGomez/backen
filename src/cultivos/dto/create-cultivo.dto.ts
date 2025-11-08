@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateCultivoDto {
   @ApiProperty({ example: 'Chayote' })
@@ -15,11 +16,13 @@ export class CreateCultivoDto {
   @IsString()
   comentario?: string;
 
-  @ApiProperty({ example: 'https://example.com/image.jpg', required: false })
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
   @IsOptional()
-  @IsUrl()
   image?: string;
 
-  @ApiProperty({ example: 1 })
-  farmerId: number;
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  farmerId?: number;
 }

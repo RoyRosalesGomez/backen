@@ -1,71 +1,55 @@
+
 // main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.setGlobalPrefix('api');
 
-  const ALLOWLIST: (string | RegExp)[] = [
-    /^https?:\/\/(localhost|127\.0\.0\.1):3000$/,
-    'https://front-topaz-two.vercel.app',
-    /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/,
-  ];
+  // Servir archivos estáticos desde la carpeta uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
-  const isAllowed = (origin?: string | null): boolean => {
-    if (!origin) return true;
-    return ALLOWLIST.some((rule) =>
-      typeof rule === 'string' ? rule === origin : rule.test(origin),
-    );
-  };
-
+  // ⚠️ CORS robusto: permite localhost y 127.0.0.1
   app.enableCors({
     origin: (origin, cb) => {
-      if (isAllowed(origin)) return cb(null, true);
-      cb(new Error('CORS blocked: ' + origin));
+      const allowlist = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+      ];
+      if (!origin || allowlist.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked: ${origin}`));
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders:
-      'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With',
-    exposedHeaders: 'Content-Range, X-Total-Count',
-    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization, Cache-Control, Pragma',
+    credentials: false, // pon true solo si usas cookies/sesión
     maxAge: 86400,
   });
 
+  // 🛟 Fallback para preflight antes de guards/filters (por si algo los intercepta)
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
-      const origin = req.headers.origin as string | undefined;
-      if (isAllowed(origin)) {
-        if (origin) res.header('Access-Control-Allow-Origin', origin);
-        res.header('Vary', 'Origin');
-        res.header(
-          'Access-Control-Allow-Methods',
-          'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        );
-        res.header(
-          'Access-Control-Allow-Headers',
-          'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With',
-        );
-        res.header('Access-Control-Allow-Credentials', 'true');
-        return res.sendStatus(204);
-      }
-      return res.sendStatus(403);
+      res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:3000');
+      res.header('Vary', 'Origin');
+      res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.sendStatus(204);
+      return;
     }
     next();
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, transformOptions: { enableImplicitConversion: true }, }));
 
+  
   await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
-  console.log('Backend listo en puerto', process.env.PORT ?? 3002);
+  console.log('🚀 Backend en http://localhost:3002');
 }
 bootstrap();
