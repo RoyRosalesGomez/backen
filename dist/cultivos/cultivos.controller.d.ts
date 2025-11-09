@@ -4,7 +4,7 @@ import { UpdateCultivoDto } from './dto/update-cultivo.dto';
 export declare class CultivosController {
     private readonly cultivosService;
     constructor(cultivosService: CultivosService);
-    create(createCultivoDto: CreateCultivoDto): Promise<import("./entities/cultivo.entity").Cultivo>;
+    create(createCultivoDto: CreateCultivoDto, file: any, req: any): Promise<import("./entities/cultivo.entity").Cultivo>;
     findAll(farmerId?: number, active?: boolean): Promise<import("./entities/cultivo.entity").Cultivo[]>;
     findOne(id: string): Promise<import("./entities/cultivo.entity").Cultivo>;
     update(id: string, updateCultivoDto: UpdateCultivoDto): Promise<import("./entities/cultivo.entity").Cultivo>;

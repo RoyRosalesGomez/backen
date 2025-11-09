@@ -3,5 +3,5 @@ export declare class CreateCultivoDto {
     variedad: string;
     comentario?: string;
     image?: string;
-    farmerId: number;
+    farmerId?: number;
 }

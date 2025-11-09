@@ -14,7 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CultivosController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
+const multer_1 = require("multer");
+const path_1 = require("path");
 const cultivos_service_1 = require("./cultivos.service");
 const create_cultivo_dto_1 = require("./dto/create-cultivo.dto");
 const update_cultivo_dto_1 = require("./dto/update-cultivo.dto");
@@ -23,7 +26,17 @@ let CultivosController = class CultivosController {
     constructor(cultivosService) {
         this.cultivosService = cultivosService;
     }
-    create(createCultivoDto) {
+    async create(createCultivoDto, file, req) {
+        const u = req.user ?? {};
+        const farmerId = Number.isFinite(Number(createCultivoDto.farmerId)) ? Number(createCultivoDto.farmerId)
+            : Number(u.sub ?? u.id ?? u.userId);
+        if (!Number.isFinite(farmerId)) {
+            throw new common_1.BadRequestException('farmerId requerido');
+        }
+        createCultivoDto.farmerId = farmerId;
+        if (file) {
+            createCultivoDto.image = `/uploads/cultivos/${file.filename}`;
+        }
         return this.cultivosService.create(createCultivoDto);
     }
     findAll(farmerId, active) {
@@ -46,10 +59,32 @@ exports.CultivosController = CultivosController;
 __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: 'Crear nuevo cultivo' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/cultivos',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `cultivo-${uniqueSuffix}${ext}`);
+            },
+        }),
+        fileFilter: (req, file, cb) => {
+            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+                return cb(new common_1.BadRequestException('Solo se permiten archivos de imagen'), false);
+            }
+            cb(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+    })),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_cultivo_dto_1.CreateCultivoDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_cultivo_dto_1.CreateCultivoDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], CultivosController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),

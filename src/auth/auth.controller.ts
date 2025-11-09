@@ -5,6 +5,8 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserRole } from 'src/users/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,5 +32,26 @@ export class AuthController {
   async adminExists() {
     const count = await this.users.countByRole(UserRole.ADMIN);
     return { exists: count > 0 };
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Verificar que el correo existe en la base de datos' })
+  @ApiResponse({ status: 200, description: 'Correo verificado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Correo no encontrado' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Restablecer contraseña verificando que coincidan' })
+  @ApiResponse({ status: 200, description: 'Contraseña actualizada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Las contraseñas no coinciden' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      resetPasswordDto.email,
+      resetPasswordDto.password,
+      resetPasswordDto.confirmPassword
+    );
   }
 }

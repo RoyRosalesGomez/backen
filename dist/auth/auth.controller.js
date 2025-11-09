@@ -20,6 +20,8 @@ const local_auth_guard_1 = require("./guards/local-auth.guard");
 const create_user_dto_1 = require("../users/dto/create-user.dto");
 const user_entity_1 = require("../users/entities/user.entity");
 const users_service_1 = require("../users/users.service");
+const forgot_password_dto_1 = require("./dto/forgot-password.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 let AuthController = class AuthController {
     constructor(authService, users) {
         this.authService = authService;
@@ -34,6 +36,12 @@ let AuthController = class AuthController {
     async adminExists() {
         const count = await this.users.countByRole(user_entity_1.UserRole.ADMIN);
         return { exists: count > 0 };
+    }
+    async forgotPassword(forgotPasswordDto) {
+        return this.authService.forgotPassword(forgotPasswordDto.email);
+    }
+    async resetPassword(resetPasswordDto) {
+        return this.authService.resetPassword(resetPasswordDto.email, resetPasswordDto.password, resetPasswordDto.confirmPassword);
     }
 };
 exports.AuthController = AuthController;
@@ -62,6 +70,27 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "adminExists", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Verificar que el correo existe en la base de datos' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Correo verificado exitosamente' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Correo no encontrado' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restablecer contraseña verificando que coincidan' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Contraseña actualizada exitosamente' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Las contraseñas no coinciden' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuario no encontrado' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)('auth'),

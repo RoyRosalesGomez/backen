@@ -86,6 +86,29 @@ let AuthService = class AuthService {
     async countAllUsers() {
         return this.usersService.countAll();
     }
+    async forgotPassword(email) {
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('No existe una cuenta con este correo electrónico');
+        }
+        return {
+            message: 'Correo verificado correctamente. Puede proceder a restablecer su contraseña.',
+            email: user.email
+        };
+    }
+    async resetPassword(email, newPassword, confirmPassword) {
+        if (newPassword !== confirmPassword) {
+            throw new common_1.BadRequestException('Las contraseñas no coinciden');
+        }
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('No existe una cuenta con este correo electrónico');
+        }
+        await this.usersService.changePassword(user.id, newPassword);
+        return {
+            message: 'Contraseña actualizada exitosamente. Ya puede iniciar sesión con su nueva contraseña.'
+        };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

@@ -126,8 +126,10 @@ let UsersService = class UsersService {
         await this.usersRepository.remove(user);
     }
     async changePassword(id, newPassword) {
+        const user = await this.findOne(id);
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        return this.update(id, { password: hashedPassword });
+        user.password = hashedPassword;
+        return this.usersRepository.save(user);
     }
     async getStatistics() {
         const total = await this.usersRepository.count();

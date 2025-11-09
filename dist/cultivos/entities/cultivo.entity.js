@@ -32,7 +32,7 @@ __decorate([
     __metadata("design:type", String)
 ], Cultivo.prototype, "comentario", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)('text', { nullable: true }),
     __metadata("design:type", String)
 ], Cultivo.prototype, "image", void 0);
 __decorate([

@@ -64,4 +64,11 @@ export declare class AuthService {
         access_token: string;
     }>;
     countAllUsers(): Promise<number>;
+    forgotPassword(email: string): Promise<{
+        message: string;
+        email: string;
+    }>;
+    resetPassword(email: string, newPassword: string, confirmPassword: string): Promise<{
+        message: string;
+    }>;
 }
