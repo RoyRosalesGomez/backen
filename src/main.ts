@@ -8,64 +8,34 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-    cors: true, // ⚡ HABILITAR CORS DESDE LA CREACIÓN
+    // Do not enable default cors here; we'll configure it explicitly below
   });
 
-  // ⚡⚡⚡ PASO 1: Obtener instancia Express INMEDIATAMENTE
-  const expressApp = app.getHttpAdapter().getInstance();
+  // Lista de orígenes permitidos (ajusta según tus frontends)
+  const allowedOrigins: Array<string | RegExp> = [
+    'https://front-topaz-two.vercel.app',
+    /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/,
+    /^https?:\/\/(localhost|127\.0\.0\.1):(3000|3001|5173|4200|8080)$/,
+  ];
 
-  // ⚡⚡⚡ PASO 2: Middleware CORS como PRIMERA COSA (antes de TODO)
-  expressApp.use((req: any, res: any, next: any) => {
-    const origin = req.headers.origin;
+  // Habilitar CORS con función de validación para soportar credentials correctamente
+  app.enableCors({
+    origin: (origin, callback) => {
+      // origin === undefined for non-browser requests (curl, server-to-server)
+      if (!origin) return callback(null, true);
 
-    // 📋 Lista de orígenes permitidos
-    const allowedOrigins = [
-      'https://front-topaz-two.vercel.app',
-      /^https:\/\/front-[a-z0-9-]+\.vercel\.app$/,
-      /^https?:\/\/(localhost|127\.0\.0\.1):(3000|3001|5173|4200|8080)$/,
-    ];
-
-    const isAllowed = (origin?: string): boolean => {
-      if (!origin) return true;
-      return allowedOrigins.some((rule) =>
+      const isAllowed = allowedOrigins.some((rule) =>
         typeof rule === 'string' ? rule === origin : rule.test(origin),
       );
-    };
 
-    // 🔍 Logging
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`📥 ${req.method} ${req.url}`);
-    console.log(`🌐 Origin: ${origin || 'NO ORIGIN'}`);
-    console.log(`🔒 Allowed: ${isAllowed(origin)}`);
-
-    // ⚡ MANEJO PREFLIGHT OPTIONS
-    if (req.method === 'OPTIONS') {
-      console.log(`⚡ PREFLIGHT OPTIONS - Respondiendo inmediatamente`);
-
-      // ✅ Siempre responder a OPTIONS (validación después)
-      res.header('Access-Control-Allow-Origin', origin || '*');
-      res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Max-Age', '86400');
-      res.header('Vary', 'Origin');
-
-      console.log(`✅ Preflight respondido con 204`);
-      console.log(`${'='.repeat(60)}\n`);
-      
-      return res.status(204).end();
-    }
-
-    // 🔐 Para requests normales
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Vary', 'Origin');
-      console.log(`✅ Headers CORS agregados`);
-    }
-
-    console.log(`${'='.repeat(60)}\n`);
-    next();
+      if (isAllowed) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'), false);
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    // keep Vary header handling to let caches know responses vary by Origin
+    preflightContinue: false,
   });
 
   // ⚡⚡⚡ PASO 3: Ahora sí configurar NestJS
