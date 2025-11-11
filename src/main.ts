@@ -18,18 +18,39 @@ async function bootstrap() {
     /^https?:\/\/(localhost|127\.0\.0\.1):(3000|3001|5173|4200|8080)$/,
   ];
 
+  // Si configuras FRONT_URL en producción, añádela dinámicamente (quita slash final si existe)
+  const envFront = process.env.FRONT_URL;
+  if (envFront && typeof envFront === 'string') {
+    const normalized = envFront.replace(/\/$/, '');
+    // Añadir solo si no está ya presente
+    if (!allowedOrigins.some((r) => (typeof r === 'string' ? r === normalized : false))) {
+      allowedOrigins.unshift(normalized);
+    }
+  }
+
+  // Mostrar los orígenes permitidos al arrancar para depuración
+  console.log('[CORS] Allowed origins:');
+  allowedOrigins.forEach((o) => console.log('  -', o));
+
   // Habilitar CORS con función de validación para soportar credentials correctamente
   app.enableCors({
     origin: (origin, callback) => {
       // origin === undefined for non-browser requests (curl, server-to-server)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log(`[CORS] No Origin header (server-to-server or same-origin)`);
+        return callback(null, true);
+      }
 
       const isAllowed = allowedOrigins.some((rule) =>
         typeof rule === 'string' ? rule === origin : rule.test(origin),
       );
 
+      console.log(`[CORS] Origin=${origin} Allowed=${isAllowed}`);
+
+      // If allowed, accept. If not, signal false (no error thrown) so the middleware
+      // simply won't set CORS headers and the browser will block the request.
       if (isAllowed) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'), false);
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -46,13 +67,6 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
-  // CORS de NestJS (redundante pero no hace daño)
-  app.enableCors({
-    origin: true, // Permitir todo (el middleware ya valida)
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  });
 
   // Validación global
   app.useGlobalPipes(
