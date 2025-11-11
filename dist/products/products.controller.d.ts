@@ -5,7 +5,7 @@ import { ProductStatus, ProductCategory } from './entities/product.entity';
 export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
-    create(createProductDto: CreateProductDto): Promise<import("./entities/product.entity").Product>;
+    create(createProductDto: CreateProductDto, file: any, req: any): Promise<import("./entities/product.entity").Product>;
     findAll(status?: ProductStatus, category?: ProductCategory, farmerId?: number, search?: string): Promise<import("./entities/product.entity").Product[]>;
     findApproved(category?: ProductCategory, search?: string): Promise<import("./entities/product.entity").Product[]>;
     getStatistics(): Promise<{

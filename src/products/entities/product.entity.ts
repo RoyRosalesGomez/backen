@@ -35,7 +35,7 @@ export class Product {
   @Column()
   stock: number;
 
-  @Column()
+  @Column('text', { nullable: true })
   image: string;
 
   @Column({

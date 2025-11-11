@@ -1,6 +1,7 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsUrl, Min } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, isNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductCategory } from '../entities/product.entity';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Chayotes Frescos' })
@@ -25,15 +26,17 @@ export class CreateProductDto {
   @Min(0)
   stock: number;
 
-  @ApiProperty({ example: 'https://example.com/image.jpg' })
-  @IsUrl()
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  @IsOptional()
   image: string;
 
   @ApiProperty({ enum: ProductCategory, example: ProductCategory.VERDURAS })
   @IsEnum(ProductCategory)
   category: ProductCategory;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   farmerId: number;
 }

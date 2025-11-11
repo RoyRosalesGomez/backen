@@ -8,8 +8,18 @@ import {
   Delete,
   Query,
   UseGuards,
+    Req,
+  BadRequestException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes} from '@nestjs/swagger';
+
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -26,7 +36,50 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear nuevo producto' })
-  create(@Body() createProductDto: CreateProductDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `products-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Solo se permiten archivos de imagen'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFile() file: any,
+    @Req() req: any,
+  ) {
+    const u = req.user ?? {};
+    // Intenta body primero, si no, toma del token (sub/id)
+    const farmerId =
+      Number.isFinite(Number(createProductDto.farmerId)) ? Number(createProductDto.farmerId)
+      : Number(u.sub ?? u.id ?? u.userId);
+
+    if (!Number.isFinite(farmerId)) {
+      throw new BadRequestException('farmerId requerido');
+    }
+
+    createProductDto.farmerId = farmerId;
+
+    // Si se subió un archivo, agregar la ruta
+    if (file) {
+      createProductDto.image = `/uploads/product/${file.filename}`;
+    }
+
     return this.productsService.create(createProductDto);
   }
 
