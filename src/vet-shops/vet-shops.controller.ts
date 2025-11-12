@@ -8,8 +8,14 @@ import {
   Delete,
   Query,
   UseGuards,
+  BadRequestException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { VetShopsService } from './vet-shops.service';
 import { CreateVetShopDto } from './dto/create-vet-shop.dto';
 import { UpdateVetShopDto } from './dto/update-vet-shop.dto';
@@ -25,7 +31,37 @@ export class VetShopsController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear nueva agro veterinaria (Solo Admin)' })
-  create(@Body() createVetShopDto: CreateVetShopDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/vet-shops',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `vet-shop-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Solo se permiten archivos de imagen'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  create(
+    @Body() createVetShopDto: CreateVetShopDto,
+    @UploadedFile() file: any,
+  ) {
+    // Si se subió un archivo, agregar la ruta
+    if (file) {
+      createVetShopDto.image = `/uploads/vet-shops/${file.filename}`;
+    }
+
     return this.vetShopsService.create(createVetShopDto);
   }
 
@@ -59,7 +95,38 @@ export class VetShopsController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar agro veterinaria (Solo Admin)' })
-  update(@Param('id') id: string, @Body() updateVetShopDto: UpdateVetShopDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/vet-shops',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `vet-shop-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Solo se permiten archivos de imagen'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateVetShopDto: UpdateVetShopDto,
+    @UploadedFile() file: any,
+  ) {
+    // Si se subió un archivo, agregar la ruta
+    if (file) {
+      updateVetShopDto.image = `/uploads/vet-shops/${file.filename}`;
+    }
+
     return this.vetShopsService.update(+id, updateVetShopDto);
   }
 
