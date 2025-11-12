@@ -41,13 +41,13 @@ export class ProductsController {
     FileInterceptor('image', {
       storage: diskStorage({
         destination: './uploads/products',
-        filename: (req, file, cb) => {
+        filename: (_req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
           cb(null, `products-${uniqueSuffix}${ext}`);
         },
       }),
-      fileFilter: (req, file, cb) => {
+      fileFilter: (_req, file, cb) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return cb(new BadRequestException('Solo se permiten archivos de imagen'), false);
         }
@@ -77,7 +77,7 @@ export class ProductsController {
 
     // Si se subió un archivo, agregar la ruta
     if (file) {
-      createProductDto.image = `/uploads/product/${file.filename}`;
+      createProductDto.image = `/uploads/products/${file.filename}`;
     }
 
     return this.productsService.create(createProductDto);
@@ -121,7 +121,38 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar producto' })
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `products-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Solo se permiten archivos de imagen'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFile() file: any,
+  ) {
+    // Si se subió un archivo, agregar la ruta
+    if (file) {
+      updateProductDto.image = `/uploads/products/${file.filename}`;
+    }
+
     return this.productsService.update(+id, updateProductDto);
   }
 

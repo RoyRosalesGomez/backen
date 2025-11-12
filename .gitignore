@@ -56,3 +56,5 @@ lerna-debug.log*
 
 # Uploads (si tienes carpeta de archivos subidos)
 uploads/
+!uploads/.gitkeep
+!uploads/**/.gitkeep
