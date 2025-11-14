@@ -54,7 +54,4 @@ lerna-debug.log*
 *.sqlite3
 *.db
 
-# Uploads (si tienes carpeta de archivos subidos)
-uploads/
-!uploads/.gitkeep
-!uploads/**/.gitkeep
+
