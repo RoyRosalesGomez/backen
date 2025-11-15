@@ -115,6 +115,9 @@ async deactivateUser(id: number): Promise<User> {
       );
     }
 
+    // Ordenar LIFO: último en entrar, primero en salir (por ID descendente)
+    query.orderBy('user.id', 'DESC');
+
     return query.getMany();
   }
 
