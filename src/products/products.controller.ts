@@ -95,12 +95,16 @@ export class ProductsController {
   }
 
   @Get('approved')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener productos aprobados (Marketplace)' })
   findApproved(
+    @Req() req: any,
     @Query('category') category?: ProductCategory,
     @Query('search') search?: string,
   ) {
-    return this.productsService.findApproved(category, search);
+    const userId = req.user?.sub ?? req.user?.id ?? req.user?.userId;
+    return this.productsService.findApproved(userId, category, search);
   }
 
   @Get('statistics')

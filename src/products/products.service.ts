@@ -119,12 +119,17 @@ async toggleActive(id: number): Promise<Product> {
     return query.getMany();
   }
 
-  async findApproved(category?: ProductCategory, search?: string): Promise<Product[]> {
+  async findApproved(userId?: number, category?: ProductCategory, search?: string): Promise<Product[]> {
     // Para clientes: solo productos APROBADOS y ACTIVOS
     const query = this.productsRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.farmer', 'farmer')
       .where('product.status = :status', { status: ProductStatus.APPROVED })
       .andWhere('product.active = :active', { active: true });
+
+    // Excluir productos del mismo usuario autenticado
+    if (userId) {
+      query.andWhere('product.farmerId != :userId', { userId });
+    }
 
     if (category) {
       query.andWhere('product.category = :category', { category });
