@@ -7,8 +7,9 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-    // Do not enable default cors here; we'll configure it explicitly below
+    logger: process.env.NODE_ENV === 'production'
+      ? ['error', 'warn', 'log']
+      : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   // Lista de orígenes permitidos (ajusta según tus frontends)
@@ -28,16 +29,20 @@ async function bootstrap() {
     }
   }
 
-  // Mostrar los orígenes permitidos al arrancar para depuración
-  console.log('[CORS] Allowed origins:');
-  allowedOrigins.forEach((o) => console.log('  -', o));
+  // Mostrar los orígenes permitidos al arrancar (solo en desarrollo)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[CORS] Allowed origins:');
+    allowedOrigins.forEach((o) => console.log('  -', o));
+  }
 
   // Habilitar CORS con función de validación para soportar credentials correctamente
   app.enableCors({
     origin: (origin, callback) => {
       // origin === undefined for non-browser requests (curl, server-to-server)
       if (!origin) {
-        console.log(`[CORS] No Origin header (server-to-server or same-origin)`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[CORS] No Origin header (server-to-server or same-origin)`);
+        }
         return callback(null, true);
       }
 
@@ -45,7 +50,9 @@ async function bootstrap() {
         typeof rule === 'string' ? rule === origin : rule.test(origin),
       );
 
-      console.log(`[CORS] Origin=${origin} Allowed=${isAllowed}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[CORS] Origin=${origin} Allowed=${isAllowed}`);
+      }
 
       // If allowed, accept. If not, signal false (no error thrown) so the middleware
       // simply won't set CORS headers and the browser will block the request.
@@ -55,7 +62,6 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    // keep Vary header handling to let caches know responses vary by Origin
     preflightContinue: false,
   });
 

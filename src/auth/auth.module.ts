@@ -22,7 +22,7 @@ import { LocalStrategy } from './strategies/local.strategy';
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         secret: cfg.get<string>('JWT_SECRET') || 'dev-fallback-secret',
-        signOptions: { expiresIn: '24h' },
+        signOptions: { expiresIn: cfg.get<string>('JWT_EXPIRES_IN') || '7d' },
       }),
     }),
   ],

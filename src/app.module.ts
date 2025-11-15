@@ -19,14 +19,15 @@ import { ActivityModule } from './activity/activity.module';
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: process.env.DB_HOST || 'interchange.proxy.rlwy.net',
-      port: parseInt(process.env.DB_PORT) || 31113,
-      username: process.env.DB_USERNAME || 'root',
-      password: process.env.DB_PASSWORD || 'zQyxNCmCIFAYWyewsWjWACmLMxsNYRXM',
-      database: process.env.DB_DATABASE || 'railway',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '3306'),
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Solo para desarrollo
-      logging: true,
+      synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+      logging: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     }),
     AuthModule,
     UsersModule,

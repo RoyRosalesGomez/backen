@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product, ProductStatus, ProductCategory } from './entities/product.entity';
@@ -37,7 +37,8 @@ export class ProductsService {
 async approve(id: number): Promise<Product> {
   const product = await this.findOne(id);
   product.status = ProductStatus.APPROVED;
-  product.active = true; // 👈 se activa al aprobar
+  // Al aprobar, el producto queda activo por defecto, pero el farmer puede desactivarlo después
+  product.active = true;
   await this.productsRepository.save(product);
 
   await this.activity.deleteProductStatusHistory(product.id);
@@ -70,13 +71,21 @@ async reject(id: number): Promise<Product> {
 
 async toggleActive(id: number): Promise<Product> {
   const product = await this.findOne(id);
+
+  // Solo productos aprobados pueden ser activados/desactivados por el farmer
+  if (product.status !== ProductStatus.APPROVED) {
+    throw new BadRequestException(
+      'Solo los productos aprobados pueden ser activados/desactivados. Productos pendientes o rechazados no pueden cambiar su estado de activación.'
+    );
+  }
+
   const updated = await this.update(id, { active: !product.active });
 
   await this.activity.log({
-    type: 'PRODUCT_SUBMITTED', // si prefieres, crea un tipo 'PRODUCT_TOGGLED'
+    type: 'PRODUCT_SUBMITTED',
     title: 'Producto activado/desactivado',
-    description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'}`,
-    meta: { productId: updated.id, active: updated.active },
+    description: `${updated.name} se ${updated.active ? 'activó' : 'desactivó'} por el agricultor`,
+    meta: { productId: updated.id, active: updated.active, status: updated.status },
   });
 
   return updated;
@@ -111,7 +120,21 @@ async toggleActive(id: number): Promise<Product> {
   }
 
   async findApproved(category?: ProductCategory, search?: string): Promise<Product[]> {
-    return this.findAll(ProductStatus.APPROVED, category, undefined, search);
+    // Para clientes: solo productos APROBADOS y ACTIVOS
+    const query = this.productsRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.farmer', 'farmer')
+      .where('product.status = :status', { status: ProductStatus.APPROVED })
+      .andWhere('product.active = :active', { active: true });
+
+    if (category) {
+      query.andWhere('product.category = :category', { category });
+    }
+
+    if (search) {
+      query.andWhere('product.name LIKE :search', { search: `%${search}%` });
+    }
+
+    return query.getMany();
   }
 
   async findOne(id: number): Promise<Product> {
@@ -135,7 +158,22 @@ async toggleActive(id: number): Promise<Product> {
 
   async remove(id: number): Promise<void> {
     const product = await this.findOne(id);
+
+    // Solo se puede eliminar si está en estado PENDING
+    if (product.status !== ProductStatus.PENDING) {
+      throw new BadRequestException(
+        'Solo se pueden eliminar productos en estado PENDING. Los productos aprobados o rechazados deben ser desactivados, no eliminados.'
+      );
+    }
+
     await this.productsRepository.remove(product);
+
+    await this.activity.log({
+      type: 'PRODUCT_SUBMITTED',
+      title: 'Producto eliminado',
+      description: `${product.name} fue eliminado (estaba en estado PENDING)`,
+      meta: { productId: product.id, status: product.status },
+    });
   }
 
   // async approve(id: number): Promise<Product> {
